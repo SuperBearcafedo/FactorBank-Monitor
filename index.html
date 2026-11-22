@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Two-Timescale FactorBank 股票预测观察台：逐股查看历史行情、H1/H5开盘到开盘预测与实际偏差。">
+  <meta name="color-scheme" content="light">
+  <title>FactorBank · 股票预测观察台</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="FactorBank 首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>FactorBank<span class="brand-sub">预测观察台</span></span></a>
+    <div class="topbar-right"><span id="publish-status" class="status-chip">正在读取数据</span><button class="icon-button" id="model-info" type="button" aria-label="查看模型与口径说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></svg><span>模型说明</span></button></div>
+  </header>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="选择股票">
+      <div class="sidebar-heading"><span class="eyebrow">观察范围</span><span id="universe-count" class="quiet">— 只</span></div>
+      <label class="field-label" for="market-select">市场面板</label>
+      <div class="select-wrap"><select id="market-select" aria-label="市场面板" disabled><option>加载市场</option></select><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></div>
+      <div class="search-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="stock-search" type="search" placeholder="搜索代码或公司名称" autocomplete="off" aria-label="搜索股票" disabled><kbd>/</kbd></div>
+      <div id="stock-list" class="stock-list" role="group" aria-label="可选股票" aria-live="polite"><div class="list-empty">正在读取观察名单…</div></div>
+      <div class="sidebar-bottom"><div class="small-label">本机模型服务</div><p id="schedule-summary">正在检查服务连接</p><p class="sidebar-note">点击更新后获取行情、运行模型并发布结果。没有定时抓取任务。</p></div>
+    </aside>
+    <main id="main-content">
+      <section class="page-intro">
+        <div><div class="eyebrow">每日预测 · 真实结果核对</div><h1>看见预测，与市场的距离。</h1><p class="intro-copy">逐股追踪 H1 与 H5 的到期表现，让每一次预测都有据可查。</p></div>
+        <div class="intro-actions"><button class="button primary" id="update-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17v-5m7 5V7m7 10V4M3 20h18"/></svg><span>更新数据并预测</span></button><button class="button secondary" id="refresh-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 7a7 7 0 0 1 11.5-1L20 9M4 15l2.5 3A7 7 0 0 0 18 17"/></svg><span>刷新结果</span></button></div>
+      </section>
+      <section class="local-service-panel" aria-labelledby="local-service-heading"><div class="service-topline"><div><span id="local-service-state" class="service-state checking">检查连接</span><strong id="local-service-heading">本机更新服务</strong></div><button type="button" id="connect-service" class="text-button">重新连接</button></div><p id="local-service-message" role="status" aria-live="polite">正在连接模型所在电脑的本机服务；已发布结果可独立查看。</p><div id="local-service-progress" class="service-progress" hidden><progress id="update-progress" max="100" aria-label="行情更新、推理与发布进度"></progress><span id="update-progress-label">等待进度</span></div><p id="local-service-help" class="service-help">在模型所在电脑的 PyCharm 运行「Dashboard - local update service」，再点击「更新数据并预测」。若浏览器询问本地网络访问权限，请按需允许此网页连接本机。</p></section>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <div id="error-panel" class="error-panel" role="alert" hidden><h2>暂时无法读取结果</h2><p id="error-message"></p><button class="button secondary" id="retry-button" type="button">重新读取</button></div>
+      <div id="stock-content" aria-busy="true">
+        <section class="stock-toolbar">
+          <div class="stock-identity"><div class="identity-top"><h2 id="stock-name">选择一只股票</h2><span id="stock-code" class="code-badge">—</span></div><p id="stock-meta">历史行情与模型预测将在这里显示</p></div>
+          <div class="toolbar-controls"><div class="horizon-switch" role="group" aria-label="预测期限"><button type="button" class="active" data-horizon="1" aria-pressed="true">H1 <span>1日</span></button><button type="button" data-horizon="5" aria-pressed="false">H5 <span>5日</span></button></div><div class="date-control"><label for="asof-date">观察截止日</label><input id="asof-date" type="date" disabled></div></div>
+        </section>
+        <div class="cutoff-line"><span id="cutoff-text">默认截止到昨天之前最近一个已收盘交易日</span><span id="source-tag" class="source-tag" hidden></span></div>
+        <section class="metric-grid" aria-label="最近已到期预测">
+          <article class="metric-card"><div class="metric-label"><span>模型预测收益</span><span class="metric-key forecast-key">PREDICTED</span></div><div class="metric-value" id="predicted-return">—</div><p id="prediction-window">等待预测记录</p></article>
+          <article class="metric-card"><div class="metric-label"><span>实际实现收益</span><span class="metric-key actual-key">REALIZED</span></div><div class="metric-value" id="actual-return">—</div><p id="actual-window">到期开盘后可核对</p></article>
+          <article class="metric-card deviation-card"><div class="metric-label"><span>预测偏差</span><span class="metric-key">ERROR</span></div><div class="metric-value" id="prediction-error">—<span>百分点</span></div><p id="direction-result">预测收益 − 实际收益</p></article>
+        </section>
+        <div id="latest-context" class="latest-context">目标口径：决策日收盘后，下一交易日开盘入场，H1 / H5 个交易间隔后的开盘到期。</div>
+        <section class="panel chart-panel" aria-labelledby="chart-heading">
+          <div class="panel-header"><div><h3 id="chart-heading">行情与到期预测</h3><p id="chart-description">收盘行情与预测到期开盘价分别展示，避免混淆价格口径。</p></div><div class="chart-range" role="group" aria-label="历史行情范围"><button type="button" data-range="60" aria-pressed="false">60日</button><button type="button" data-range="120" class="active" aria-pressed="true">120日</button><button type="button" data-range="250" aria-pressed="false">250日</button></div></div>
+          <div class="chart-controls"><div class="chart-tabs" role="group" aria-label="图表视图"><button class="active" type="button" data-chart="price" aria-pressed="true">行情与预测</button><button type="button" data-chart="returns" aria-pressed="false">收益对照</button></div><div id="chart-legend" class="chart-legend"><span><i class="legend-line"></i>历史收盘</span><span><i class="legend-dot forecast"></i>预测到期开盘</span><span><i class="legend-dot actual"></i>实际到期开盘</span></div></div>
+          <div class="chart-stage" id="chart-stage"><svg id="history-chart" role="img" aria-label="历史行情与预测结果图"></svg><div id="chart-empty" class="chart-empty">加载实际行情与预测记录中…</div><div class="chart-tooltip" id="chart-tooltip" hidden></div></div>
+          <div class="chart-footnote"><span id="chart-footnote">图中价格由入场开盘价与预测收益换算；只有价格基准可核对时才绘制预测点。</span><span id="history-count">— 个交易日</span></div>
+        </section>
+        <section class="evaluation-strip" aria-label="当前范围内已到期结果汇总"><div><span class="small-label">当前截止日内的记录</span><strong id="evaluated-count">—</strong></div><div><span class="small-label">平均绝对偏差</span><strong id="mean-error">—</strong></div><div><span class="small-label">方向一致率</span><strong id="direction-rate">—</strong></div><p id="evaluation-note">仅统计有实际收益的已到期记录，未到期或缺失报价不计入。</p></section>
+        <section class="panel records-panel" aria-labelledby="records-heading"><div class="panel-header"><div><h3 id="records-heading">每一笔预测的结果</h3><p id="records-description">决策、入场与到期日期完整保留，H5 为五个交易间隔的累计收益。</p></div><span id="records-count" class="quiet">— 条</span></div><div class="table-scroll"><table><thead><tr><th scope="col">决策日</th><th scope="col">入场开盘</th><th scope="col">到期开盘</th><th scope="col" class="numeric">预测收益</th><th scope="col" class="numeric">实际收益</th><th scope="col" class="numeric">偏差 <span class="quiet">(百分点)</span></th><th scope="col">结果</th></tr></thead><tbody id="prediction-rows"><tr><td colspan="7" class="table-empty">尚未读取预测记录</td></tr></tbody></table></div><div class="table-footer"><span id="record-origin-note">每条记录保留生成方式与日期，不把历史回放标成事前预测。</span><button type="button" id="show-more" class="text-button" hidden>显示更多记录</button></div></section>
+        <footer class="page-footer"><div><span class="footer-brand">Two-Timescale FactorBank</span><span id="model-caption">共享模型 · H1 / H5</span></div><p id="updated-caption">等待最新发布信息</p><p>预测偏差用于核对模型表现；收益口径为开盘到开盘，未扣除交易成本。</p></footer>
+      </div>
+    </main>
+  </div>
+  <dialog id="info-dialog"><div class="dialog-heading"><h2>模型与展示口径</h2><button type="button" class="close-button" id="close-info" aria-label="关闭说明">×</button></div><div class="dialog-content"><p id="info-model">Two-Timescale FactorBank</p><dl><dt>H1 / H5 是什么？</dt><dd>在决策日收盘后形成预测，下一交易日开盘入场；分别在 1 个或 5 个交易间隔后的开盘到期。页面使用真实交易日，而非日历日倒推。</dd><dt>为什么默认只看到昨天？</dt><dd>以数据服务给出的最近已收盘交易日为准，排除今天与尚未完成的市场日。不同市场节假日和时区会带来不同截止日。</dd><dt>预测偏差如何计算？</dt><dd>预测收益减实际收益，以百分点显示；平均绝对偏差使用绝对值。方向一致率比较预测与实际收益的正负号，零收益单独作为零方向。</dd><dt>历史回放与事前预测</dt><dd>首次补齐的历史窗口按当时可见输入运行，标记为“历史回放”；之后在目标信息出现前生成并留存的记录标记为“事前存档”。它们的生成时间和来源均应保留，不能混称为未见数据上的真实历史交易。</dd><dt>如何更新行情与预测？</dt><dd>先在模型所在电脑的 PyCharm 启动本机服务，再点击“更新数据并预测”。服务执行增量行情获取、固定权重推理和 GitHub Pages 发布，进度在页面显示。它不会创建每日定时任务；“刷新结果”只重新获取已发布快照，不启动模型。GitHub Pages 构建需要一定时间，本机完成不等同于新网页已经生效。</dd><dt>本机服务离线怎么办？</dt><dd>已发布结果仍可查看。在模型所在电脑启动“Dashboard - local update service”，并允许浏览器连接本机网络后重试。本机模型、GitHub 凭据和私有仓库内容不会由网页上传到云端推理服务。</dd></dl><div class="model-fingerprint"><span class="small-label">当前检查点</span><code id="model-hash">尚未发布校验值</code></div></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
